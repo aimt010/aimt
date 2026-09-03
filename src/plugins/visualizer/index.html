@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>AIMT Explorer</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0b;
+  --panel:#121214;
+  --panel2:#1a1a1e;
+  --border:#232326;
+  --text:#e8e8ec;
+  --muted:#9aa0a8;
+  --accent:#6b8cff;
+  --hover:#1c1c20;
+  --selected:#1e2535;
+  --selected-border:#5b7cff;
+  --editor-bg:#0e0e10;
+  --editor-gutter:#121214;
+  --editor-line-hover:#18181d;
+  --scrollbar:#2a2a30;
+  --tree-guide:#2a2d34;
+  --folder-icon:#d4a657;
+  --file-icon:#9ca3af;
+}
+:root[data-theme="light"]{
+  --bg:#fcfcfa;
+  --panel:#f5f5f7;
+  --panel2:#ffffff;
+  --border:#e8e8ea;
+  --text:#1a1a1e;
+  --muted:#6b6b76;
+  --accent:#3b5bdb;
+  --hover:#ececf0;
+  --selected:#eef2ff;
+  --selected-border:#5b7cff;
+  --editor-bg:#ffffff;
+  --editor-gutter:#f5f5f7;
+  --editor-line-hover:#f2f2f4;
+  --scrollbar:#d4d4d8;
+  --tree-guide:#e8e8ea;
+  --folder-icon:#c28a1e;
+  --file-icon:#71717a;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;font-size:13px;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--scrollbar);border-radius:4px}
+::-webkit-scrollbar-track{background:transparent}
+.topbar{height:40px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 14px;gap:12px;flex-shrink:0}
+.topbar-left{display:flex;align-items:center;gap:12px;min-width:0}
+.logo{font-weight:650;letter-spacing:-0.01em;font-size:13px;color:var(--text)}
+.filename{color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:450}
+.badge{font-size:10.5px;padding:2px 8px;border-radius:999px;border:1px solid var(--border);white-space:nowrap;font-weight:500;letter-spacing:0.01em}
+.badge.valid{color:#15803d;border-color:#bbf7d0;background:#f0fdf4}
+:root[data-theme="dark"] .badge.valid{color:#4ade80;border-color:rgba(74,222,128,0.25);background:rgba(74,222,128,0.1)}
+.badge.invalid{color:#dc2626;border-color:#fecaca;background:#fef2f2}
+:root[data-theme="dark"] .badge.invalid{color:#f87171;border-color:rgba(248,113,113,0.3);background:rgba(248,113,113,0.12)}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+#search{width:260px;max-width:40vw;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:8px;outline:none;font-size:12.5px;transition:border-color 0.15s, box-shadow 0.15s}
+#search:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent)}
+#search::placeholder{color:var(--muted)}
+.btn{background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:500;transition:background 0.15s, border-color 0.15s}
+.btn:hover{background:var(--hover);border-color:var(--border)}
+.search-wrap{position:relative}
+.search-results{position:absolute;top:100%;left:0;right:0;margin-top:6px;background:var(--panel);border:1px solid var(--border);border-radius:8px;max-height:240px;overflow-y:auto;z-index:20;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.12)}
+.search-results.open{display:block}
+.search-item{padding:6px 10px;cursor:pointer;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border)}
+.search-item:last-child{border-bottom:none}
+.search-item:hover{background:var(--hover)}
+.search-item .sid{font-size:11px;color:var(--muted)}
+.panel-header{padding:9px 12px;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);background:var(--panel);font-weight:650;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.panel-header .panel-title{display:flex;align-items:center;gap:7px}
+.panel-header .panel-icon{width:14px;height:14px;display:inline-flex;opacity:0.75}
+.panel-header .panel-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:18px;padding:0 6px;border-radius:999px;background:var(--bg);border:1px solid var(--border);font-size:10px;font-weight:600;letter-spacing:0.02em;color:var(--muted)}
+.main{height:calc(100vh - 40px);display:flex;overflow:hidden}
+.explorer{flex:0 0 30%;min-width:260px;max-width:55%;background:var(--panel);border-right:1px solid var(--border);overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column}
+.explorer .tree{flex:1;padding:8px 4px 16px 4px}
+.divider{width:5px;background:transparent;cursor:col-resize;flex-shrink:0;position:relative}
+.divider::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--border);transform:translateX(-50%);transition:background 0.15s, width 0.15s}
+.divider:hover::after{background:var(--accent);width:2px}
+.divider:active::after{background:var(--accent)}
+.viewer{flex:1;min-width:320px;background:var(--editor-bg);overflow:hidden;display:flex;flex-direction:column}
+.viewer-inner{flex:1;overflow:auto}
+.viewer .panel-header{background:var(--panel)}
+.breadcrumb{display:flex;align-items:center;gap:1px;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;padding:6px 10px 6px 12px;font-size:12px;line-height:18px;scrollbar-width:none;-ms-overflow-style:none;position:relative}
+.breadcrumb::-webkit-scrollbar{display:none}
+.breadcrumb::after{content:"";position:absolute;right:0;top:0;bottom:0;width:24px;background:linear-gradient(to right, transparent, var(--panel));pointer-events:none;opacity:0.9}
+.breadcrumb-sep{color:var(--muted);opacity:0.28;margin:0 1px;font-size:10px;user-select:none;font-weight:400}
+.breadcrumb-item{display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:6px;transition:background 0.14s, border-color 0.14s;flex-shrink:0;border:1px solid transparent}
+.breadcrumb-item:hover{background:var(--hover);border-color:var(--border)}
+.breadcrumb-item.active{background:var(--selected);border-color:color-mix(in srgb, var(--selected-border) 18%, transparent);box-shadow:0 1px 2px rgba(0,0,0,0.06)}
+.breadcrumb-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;opacity:0.92;box-shadow:0 0 0 1px color-mix(in srgb, currentColor 18%, transparent)}
+.breadcrumb-level{font-weight:650;cursor:pointer;letter-spacing:-0.01em;font-size:11.5px;opacity:0.95}
+.breadcrumb-id{font-weight:500;cursor:pointer;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11.5px;color:var(--text);letter-spacing:-0.01em}
+.breadcrumb-item.active .breadcrumb-id{font-weight:600}
+.breadcrumb-ellipsis{color:var(--muted);padding:2px 6px;font-size:11px;user-select:none}
+/* explorer - polished modern tree */
+.tree-empty{padding:24px 16px;text-align:center;color:var(--muted);font-size:12px;line-height:1.5}
+.level-folder{margin:1px 0;position:relative}
+.folder-row{display:flex;align-items:center;gap:5px;padding:4px 8px 4px 4px;cursor:pointer;user-select:none;line-height:20px;white-space:nowrap;border-radius:6px;margin:1px 4px;position:relative;transition:background 0.12s, color 0.12s}
+.folder-row:hover{background:var(--hover)}
+.folder-row:active{background:color-mix(in srgb, var(--hover) 85%, var(--text) 4%)}
+.folder-row:focus-visible{outline:2px solid var(--accent);outline-offset:-1px}
+.folder-toggle{width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);flex-shrink:0;border-radius:4px;transition:background 0.12s, color 0.12s}
+.folder-toggle:hover{background:color-mix(in srgb, var(--hover) 80%, var(--panel) 20%)}
+.folder-toggle svg{width:10px;height:10px;stroke:currentColor;stroke-width:1.6;transition:transform 0.16s ease, stroke 0.12s}
+.folder-toggle.expanded{color:var(--text)}
+.folder-toggle.expanded svg{transform:rotate(90deg)}
+.folder-icon{width:15px;height:15px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;filter:saturate(0.9)}
+.folder-icon svg{width:15px;height:15px}
+.folder-label{font-size:12px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:6px;letter-spacing:-0.015em;line-height:1}
+.folder-count{font-size:10px;color:var(--muted);font-weight:500;background:var(--bg);border:1px solid var(--border);padding:0 5px;height:16px;display:inline-flex;align-items:center;border-radius:999px;min-width:18px;justify-content:center}
+.folder-content{position:relative;--guide-color:var(--tree-guide);margin-top:2px}
+.folder-content::before{
+  content:"";
+  position:absolute;
+  top:2px;
+  bottom:10px;
+  left:calc(8px + var(--depth, 0)*14px + 8px);
+  width:1px;
+  background:var(--guide-color);
+  opacity:0.38;
+  border-radius:1px;
+  transition:background 0.15s, opacity 0.15s;
+}
+.level-folder:hover > .folder-content::before{opacity:0.7}
+.file-children{position:relative;--guide-color:var(--tree-guide);margin-top:2px}
+.file-children::before{
+  content:"";
+  position:absolute;
+  top:2px;
+  bottom:10px;
+  left:calc(8px + var(--depth, 0)*14px + 8px);
+  width:1px;
+  background:var(--guide-color);
+  opacity:0.28;
+}
+.file-children:hover::before{opacity:0.5}
+.file-row{display:flex;align-items:center;gap:7px;padding:3px 8px 3px 4px;cursor:pointer;white-space:nowrap;line-height:20px;font-size:12px;color:var(--muted);border-radius:6px;margin:1px 4px;position:relative;transition:background 0.12s, border-color 0.12s, color 0.12s;opacity:0.92}
+.file-row:hover{background:var(--hover);color:var(--text);opacity:1}
+.file-row.selected{background:var(--selected);border:1px solid color-mix(in srgb, var(--selected-border) 22%, transparent);padding-left:5px;box-shadow:0 1px 2px rgba(0,0,0,0.06);color:var(--level-color, var(--text));opacity:1}
+:root[data-theme="dark"] .file-row.selected{box-shadow:0 1px 3px rgba(0,0,0,0.28)}
+.file-row.selected .file-name{color:var(--level-color, var(--text));font-weight:600}
+.file-row:not(.selected) .file-icon{opacity:0.65}
+.file-row.selected .file-icon{opacity:1}
+/* indent-rainbow: only vertical guides, no horizontal elbows */
+.file-row.selected::before{left:-7px}
+.file-icon{width:12px;height:12px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;opacity:0.92;transition:opacity 0.12s, transform 0.12s}
+.file-row:hover .file-icon{opacity:1}
+.file-icon svg{width:12px;height:12px;stroke:var(--file-icon)}
+.file-name{overflow:hidden;text-overflow:ellipsis;font-size:12px;font-weight:450;letter-spacing:-0.01em;line-height:1}
+.file-name-secondary{font-size:10.5px;color:var(--muted);font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px;opacity:0.85}
+/* editor */
+.editor-wrap{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:13px;line-height:20px;display:flex;flex-direction:column;height:100%}
+.editor-header{padding:8px 12px;background:var(--editor-gutter);border-bottom:1px solid var(--border);font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;flex-shrink:0;font-weight:500}
+.editor-content{display:flex;flex:1;overflow:auto}
+.gutter{background:var(--editor-gutter);border-right:1px solid var(--border);padding:8px 8px 8px 0;text-align:right;color:var(--muted);user-select:none;min-width:44px;font-variant-numeric:tabular-nums;flex-shrink:0}
+.gutter div{line-height:20px;font-size:12px}
+.gutter .blank{height:20px}
+.code{padding:8px 12px;white-space:pre;flex:1}
+.code-line{display:block;line-height:20px;white-space:pre}
+.code-line:hover{background:var(--editor-line-hover)}
+.code-line.section-gap{height:12px}
+.hl-level{color:#be123c}
+:root[data-theme="dark"] .hl-level{color:#fb7185}
+.hl-section{color:#7c3aed}
+:root[data-theme="dark"] .hl-section{color:#c4b5fd}
+.hl-field{color:#2563eb}
+:root[data-theme="dark"] .hl-field{color:#93c5fd}
+.hl-colon{color:var(--muted)}
+.hl-value{color:var(--text)}
+.hl-relation{color:#0d7a5f}
+:root[data-theme="dark"] .hl-relation{color:#6ee7b7}
+.placeholder{color:var(--muted);text-align:center;margin-top:80px;font-size:13px;padding:20px}
+/* about modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);backdrop-filter:blur(2px);display:none;align-items:center;justify-content:center;z-index:100;padding:16px}
+:root[data-theme="light"] .modal-overlay{background:rgba(0,0,0,0.28)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--panel);border:1px solid var(--border);border-radius:12px;max-width:480px;width:100%;box-shadow:0 16px 48px rgba(0,0,0,0.28);overflow:hidden}
+:root[data-theme="light"] .modal{box-shadow:0 16px 48px rgba(0,0,0,0.12)}
+.modal-head{padding:20px 20px 0 20px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.modal-title{font-size:15px;font-weight:700;letter-spacing:-0.015em;color:var(--text);line-height:1.2}
+.modal-subtitle{font-size:12px;font-weight:600;color:var(--accent);margin-top:4px;letter-spacing:0.01em}
+.modal-close{width:28px;height:28px;border-radius:7px;border:1px solid var(--border);background:var(--panel2);color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 0.12s}
+.modal-close:hover{background:var(--hover);color:var(--text)}
+.modal-body{padding:16px 20px 20px 20px}
+.modal-desc{font-size:12.5px;line-height:1.6;color:var(--muted);margin:0}
+.modal-meta{margin-top:14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:11.5px}
+.modal-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-weight:500}
+.modal-pill a{color:var(--accent);text-decoration:none;font-weight:500}
+.modal-pill a:hover{text-decoration:underline}
+@media(max-width:800px){
+  .main{flex-direction:column}
+  .explorer{flex:none;height:42vh;max-width:100%;border-right:none;border-bottom:1px solid var(--border)}
+  .divider{display:none}
+  .viewer{flex:1}
+}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left">
+    <span class="logo">AIMT</span>
+    <span class="filename" id="filename">loading…</span>
+    <span class="badge" id="badge">…</span>
+  </div>
+  <div class="topbar-right">
+    <div class="search-wrap">
+      <input id="search" type="text" placeholder="Search id, title, level…" autocomplete="off"/>
+      <div id="searchResults" class="search-results"></div>
+    </div>
+    <button id="themeToggle" class="btn" title="Toggle theme">🌙 Dark</button>
+    <button id="reload" class="btn">↻ Reload</button>
+    <button id="aboutBtn" class="btn" title="About AIMT" aria-label="About AIMT">ⓘ About</button>
+  </div>
+</div>
+<div class="main" id="main">
+  <div class="explorer" id="explorer"><div class="panel-header"><span class="panel-title"><span class="panel-icon"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 3.5H5.2L6.6 5.2H11.5C12.1 5.2 12.6 5.7 12.6 6.3V12.2C12.6 12.8 12.1 13.3 11.5 13.3H3.1C2.5 13.3 2 12.8 2 12.2V3.5H3Z" stroke="currentColor" stroke-width="1.1" fill="none" stroke-linejoin="round"/><path d="M2 3.5C2 2.7 2.6 2.1 3.4 2.1H5.6L7 3.5H2Z" fill="currentColor" opacity="0.14"/></svg></span>AIMT Explorer</span><span id="explorerCount" class="panel-count">0</span></div><div class="tree" id="tree"></div></div>
+  <div class="divider" id="divider"></div>
+  <div class="viewer" id="viewer"><div class="panel-header" id="viewerHeader">Selected entity</div><div class="viewer-inner" id="viewerInner"><div class="placeholder">Select a .pmap file</div></div></div>
+</div>
+<div id="aboutModal" class="modal-overlay" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+    <div class="modal-head">
+      <div>
+        <div id="aboutTitle" class="modal-title">AIMT — AI Mapping Taxonomy</div>
+        <div class="modal-subtitle">Building the Knowledge Brain of AI</div>
+      </div>
+      <button id="aboutClose" class="modal-close" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="modal-desc">AIMT is a structured, file-based knowledge format that helps build the knowledge brain of AI by mapping software, data, websites, and other information into connected structures, giving AI a clear understanding of entities, hierarchy, relationships, context, and evidence.</p>
+      <div class="modal-meta">
+        <span class="modal-pill">Version <span id="aboutVersion">0.1.0</span></span>
+        <span class="modal-pill">GitHub <a id="aboutGithub" href="https://github.com/aimt010/aimt" target="_blank" rel="noopener">github.com/aimt010/aimt</a></span>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const levelColors = { aimt:"#ab7ff1", map:"#58a6ff", domain:"#3fb950", region:"#e3b341", node:"#39c5cf", file:"#d29922", frame:"#f778ba" };
+const levelOrder = ["aimt","map","domain","region","node","file","frame"];
+let treeData = null;
+let roots = [];
+let selectedId = null;
+let expandedFolders = new Set();
+
+function el(tag, cls, text){ const e=document.createElement(tag); if(cls) e.className=cls; if(text!=null) e.textContent=text; return e; }
+async function fetchJSON(url){ const r=await fetch(url); if(!r.ok) throw new Error(url+" "+r.status); return r.json(); }
+
+function svgFolder(color, open){
+  if(open){
+    return `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 4.2L2 12.6C2 13.1 2.4 13.5 2.9 13.5H13.1C13.6 13.5 14 13.1 14 12.6V5.4C14 4.9 13.6 4.5 13.1 4.5H7.2L5.8 2.9H2.9C2.4 2.9 2 3.3 2 3.8V4.2Z" fill="${color}" fill-opacity="0.92" stroke="${color}" stroke-opacity="0.38" stroke-width="0.6" stroke-linejoin="round"/><path d="M2 4.2C2 3.6 2.4 3.1 2.9 3.1H5.6L6.8 4.2H2Z" fill="white" fill-opacity="0.14"/></svg>`;
+  }
+  return `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 3.5L2 12.5C2 13 2.5 13.5 3 13.5L13 13.5C13.5 13.5 14 13 14 12.5L14 5.5C14 5 13.5 4.5 13 4.5L7.5 4.5L6 2.5L3 2.5C2.5 2.5 2 3 2 3.5Z" fill="${color}" fill-opacity="0.88" stroke="${color}" stroke-opacity="0.32" stroke-width="0.6" stroke-linejoin="round"/></svg>`;
+}
+function svgFile(){
+  return `<svg width="11" height="11" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 2.5H10L12.5 5V13.5C12.5 13.8 12.3 14 12 14H5C4.7 14 4.5 13.8 4.5 13.5V3C4.5 2.7 4.7 2.5 5 2.5Z" stroke="currentColor" stroke-width="1.05" fill="none" stroke-linejoin="round"/><path d="M10 2.5V5H12.5" stroke="currentColor" stroke-width="1.05" fill="none" stroke-linejoin="round"/></svg>`;
+}
+function svgChevron(){
+  return `<svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M6 3.5 L10 8 L6 12.5" stroke="currentColor" stroke-width="1.45" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
+// theme
+function getPreferredTheme(){
+  const saved = localStorage.getItem("aimt-theme");
+  if(saved) return saved;
+  return window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+}
+function setTheme(theme){
+  document.documentElement.setAttribute("data-theme", theme);
+  localStorage.setItem("aimt-theme", theme);
+  const btn=document.getElementById("themeToggle");
+  btn.textContent = theme==="light" ? "🌙 Dark" : "☀ Light";
+}
+setTheme(getPreferredTheme());
+document.getElementById("themeToggle").addEventListener("click", ()=>{
+  const cur=document.documentElement.getAttribute("data-theme")||"dark";
+  setTheme(cur==="dark"?"light":"dark");
+});
+
+function collectFolderKeys(nodes, parentKey){
+  for(const n of nodes){
+    const groups = groupByLevel(n.children||[]);
+    for(const lvl of levelOrder){
+      const g = groups[lvl];
+      if(g && g.length){
+        const key = n.id+":"+lvl;
+        expandedFolders.add(key);
+        for(const child of g) collectFolderKeys([child], key);
+      }
+    }
+  }
+}
+function groupByLevel(nodes){
+  const map={};
+  for(const n of nodes){
+    if(!map[n.level]) map[n.level]=[];
+    map[n.level].push(n);
+  }
+  for(const k in map) map[k].sort((a,b)=> (a.filename||a.id).localeCompare(b.filename||b.id));
+  return map;
+}
+
+async function init(){
+  const status = await fetchJSON("/api/status");
+  document.getElementById("filename").textContent = status.filename;
+  const badge=document.getElementById("badge");
+  if(status.valid){ badge.textContent="✓ Valid"; badge.className="badge valid"; }
+  else { badge.textContent="✗ Invalid ("+status.errors.length+")"; badge.className="badge invalid"; }
+  badge.title = status.valid ? "Validation passed" : status.errors.map(e=>e.message).join("\n");
+  const tree = await fetchJSON("/api/tree");
+  treeData = tree;
+  roots = tree.roots||[];
+  document.getElementById("filename").textContent = tree.filename;
+  document.getElementById("explorerCount").textContent = tree.count;
+  expandedFolders = new Set();
+  const topGroups = groupByLevel(roots);
+  for(const lvl of levelOrder){
+    if(topGroups[lvl] && topGroups[lvl].length) expandedFolders.add("root:"+lvl);
+  }
+  collectFolderKeys(roots, "root");
+  renderExplorer();
+}
+
+function renderExplorer(){
+  const container=document.getElementById("tree");
+  container.innerHTML="";
+  const topGroups = groupByLevel(roots);
+  for(const lvl of levelOrder){
+    const files = topGroups[lvl];
+    if(!files || !files.length) continue;
+    const key = "root:"+lvl;
+    container.appendChild(renderLevelFolder(lvl, files, key, 0));
+  }
+}
+
+function renderLevelFolder(level, files, key, depth){
+  const wrap = el("div","level-folder");
+  wrap.dataset.key = key;
+  const row = el("div","folder-row");
+  row.style.paddingLeft = (8 + depth*14)+"px";
+  const expanded = expandedFolders.has(key);
+  const toggle = el("span","folder-toggle");
+  toggle.classList.toggle("expanded", expanded);
+  toggle.innerHTML = svgChevron();
+  row.appendChild(toggle);
+  const icon = el("span","folder-icon");
+  icon.innerHTML = svgFolder(levelColors[level]||"#8b949e", expanded);
+  const label = el("span","folder-label");
+  label.appendChild(document.createTextNode(" @"+level));
+  const count = el("span","folder-count",String(files.length));
+  label.appendChild(count);
+  row.appendChild(icon);
+  row.appendChild(label);
+  row.addEventListener("click", (e)=>{
+    e.stopPropagation();
+    if(expandedFolders.has(key)) expandedFolders.delete(key); else expandedFolders.add(key);
+    renderExplorer();
+  });
+  wrap.appendChild(row);
+  const content = el("div","folder-content");
+  content.style.display = expanded ? "block" : "none";
+  content.style.setProperty("--depth", depth);
+  content.style.setProperty("--guide-color", levelColors[level] || "var(--tree-guide)");
+  const sorted = [...files].sort((a,b)=>(a.filename||a.id).localeCompare(b.filename||b.id));
+  for(const f of sorted){
+    content.appendChild(renderFileNode(f, depth+1));
+  }
+  wrap.appendChild(content);
+  return wrap;
+}
+
+function renderFileNode(node, depth){
+  const wrap = el("div");
+  wrap.dataset.id = node.id;
+  const row = el("div","file-row");
+  const isActive = selectedId===node.id;
+  if(isActive) row.classList.add("selected");
+  row.style.paddingLeft = (8 + depth*14)+"px";
+  row.dataset.id = node.id;
+  row.style.setProperty("--level-color", levelColors[node.level] || "var(--text)");
+  const icon = el("span","file-icon");
+  icon.innerHTML = svgFile();
+  // file icon stroke follows level color only for active
+  if(isActive) icon.style.color = levelColors[node.level] || "var(--file-icon)";
+  const name = el("span","file-name", node.filename|| (node.id+".pmap"));
+  row.appendChild(icon);
+  row.appendChild(name);
+  if(node.title && node.title !== node.id && node.title.trim()){
+    const sec = el("span","file-name-secondary", "· "+node.title);
+    sec.title = node.title;
+    row.appendChild(sec);
+  }
+  row.title = node.id + (node.title ? " — "+node.title : "");
+  row.addEventListener("click", (e)=>{ e.stopPropagation(); select(node.id); });
+  wrap.appendChild(row);
+  const groups = groupByLevel(node.children||[]);
+  let hasChildren = false;
+  for(const lvl of levelOrder) if(groups[lvl] && groups[lvl].length) hasChildren=true;
+  if(hasChildren){
+    const childrenWrap = el("div","file-children");
+    childrenWrap.style.setProperty("--depth", depth);
+    childrenWrap.style.setProperty("--guide-color", levelColors[node.level] || "var(--tree-guide)");
+    for(const lvl of levelOrder){
+      const files = groups[lvl];
+      if(!files || !files.length) continue;
+      const key = node.id+":"+lvl;
+      const folder = renderLevelFolder(lvl, files, key, depth+1);
+      childrenWrap.appendChild(folder);
+    }
+    wrap.appendChild(childrenWrap);
+  }
+  return wrap;
+}
+
+function highlightLine(line){
+  const esc = (s)=> s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  if(line.startsWith("@") && !line.startsWith("@relation")){
+    return '<span class="hl-level">'+esc(line)+'</span>';
+  }
+  if(line.startsWith("#header") || line.startsWith("#body")){
+    return '<span class="hl-section">'+esc(line)+'</span>';
+  }
+  if(/^\s{2}[a-z_]+:$/.test(line)){
+    const m=line.match(/^(\s*)([a-z_]+)(:)$/);
+    if(m) return esc(m[1])+'<span class="hl-field">'+esc(m[2])+'</span><span class="hl-colon">'+esc(m[3])+'</span>';
+  }
+  if(line.trim()==="@relation"){
+    return line.replace("@relation", '<span class="hl-relation">@relation</span>');
+  }
+  if(/^\s{6}[a-z_]+:$/.test(line)){
+    const m=line.match(/^(\s*)([a-z_]+)(:)$/);
+    if(m) return esc(m[1])+'<span class="hl-field">'+esc(m[2])+'</span><span class="hl-colon">'+esc(m[3])+'</span>';
+  }
+  return '<span class="hl-value">'+esc(line)+'</span>';
+}
+
+function renderEditor(raw, filename, id, level){
+  const viewerInner=document.getElementById("viewerInner");
+  viewerInner.innerHTML="";
+  const header=document.getElementById("viewerHeader");
+  header.textContent="";
+  header.className="panel-header";
+  // show file name directly in editor header (no breadcrumb)
+  const title = el("span",null, filename);
+  title.style.fontWeight="600";
+  title.style.letterSpacing="-0.01em";
+  title.style.color="var(--text)";
+  title.style.textTransform="none";
+  title.style.fontSize="12px";
+  header.appendChild(title);
+  const lvl = el("span",null, "@"+level);
+  lvl.style.fontSize="10px";
+  lvl.style.fontWeight="600";
+  lvl.style.color = levelColors[level] || "var(--muted)";
+  lvl.style.border="1px solid var(--border)";
+  lvl.style.padding="1px 6px";
+  lvl.style.borderRadius="999px";
+  lvl.style.background="var(--bg)";
+  header.appendChild(lvl);
+  const wrap=el("div","editor-wrap");
+  const content=el("div","editor-content");
+  const gutter=el("div","gutter");
+  const code=el("div","code");
+  const lines = raw.replace(/\n$/,"").split("\n");
+  for(let i=0;i<lines.length;i++){
+    const line = lines[i];
+    const n=el("div",null, String(i+1));
+    gutter.appendChild(n);
+    const lineEl=document.createElement("div");
+    lineEl.className="code-line";
+    if(line===""){
+      lineEl.innerHTML="&nbsp;";
+    } else {
+      lineEl.innerHTML = highlightLine(line);
+    }
+    code.appendChild(lineEl);
+  }
+  content.appendChild(gutter);
+  content.appendChild(code);
+  wrap.appendChild(content);
+  content.addEventListener("scroll", ()=>{ gutter.scrollTop = content.scrollTop; });
+  viewerInner.appendChild(wrap);
+}
+
+async function select(id){
+  selectedId=id;
+  renderExplorer();
+  const viewerInner=document.getElementById("viewerInner");
+  viewerInner.innerHTML='<div class="placeholder">Loading…</div>';
+  try{
+    const data=await fetchJSON("/api/entity/"+encodeURIComponent(id));
+    function findPath(nodes, target, path){
+      for(const n of nodes){
+        if(n.id===target) return [...path, n];
+        const found=findPath(n.children||[], target, [...path, n]);
+        if(found) return found;
+      }
+      return null;
+    }
+    const path = findPath(roots, id, []);
+    if(path){
+      const topGroups = groupByLevel(roots);
+      for(const lvl of levelOrder){
+        const files = topGroups[lvl];
+        if(files && files.some(f=> path.some(p=> p.id===f.id))){
+          expandedFolders.add("root:"+lvl);
+        }
+      }
+      for(let i=0;i<path.length-1;i++){
+        const parent = path[i];
+        const child = path[i+1];
+        expandedFolders.add(parent.id+":"+child.level);
+      }
+      renderExplorer();
+    }
+    renderEditor(data.raw || "", data.filename || (id+".pmap"), data.id, data.level);
+  }catch(e){
+    viewerInner.innerHTML='<div class="placeholder">Failed to load '+id+'</div>';
+  }
+}
+
+let searchTimer=null;
+const searchInput=document.getElementById("search");
+const searchResults=document.getElementById("searchResults");
+searchInput.addEventListener("input", ()=>{
+  clearTimeout(searchTimer);
+  searchTimer=setTimeout(async()=>{
+    const q=searchInput.value.trim();
+    if(!q){ searchResults.classList.remove("open"); searchResults.innerHTML=""; return; }
+    try{
+      const res=await fetchJSON("/api/search?q="+encodeURIComponent(q));
+      if(!res.length){ searchResults.innerHTML='<div class="search-item"><span class="sid">No results</span></div>'; searchResults.classList.add("open"); return;}
+      searchResults.innerHTML="";
+      for(const r of res.slice(0,12)){
+        const item=el("div","search-item");
+        const dot=el("span",""); dot.style.width="6px"; dot.style.height="6px"; dot.style.borderRadius="50%"; dot.style.display="inline-block"; dot.style.background=levelColors[r.level]||"#8b949e";
+        const txt=el("span",null, r.title ? r.title+" ("+r.id+")" : r.id);
+        txt.style.fontSize="12px";
+        const tag=el("span","sid", r.level);
+        item.appendChild(dot); item.appendChild(txt); item.appendChild(tag);
+        item.addEventListener("click", ()=>{
+          searchResults.classList.remove("open");
+          select(r.id);
+          searchInput.value=r.id;
+        });
+        searchResults.appendChild(item);
+      }
+      searchResults.classList.add("open");
+    }catch(e){ searchResults.classList.remove("open"); }
+  },200);
+});
+document.addEventListener("click", (e)=>{ if(!e.target.closest(".search-wrap")) searchResults.classList.remove("open"); });
+document.getElementById("reload").addEventListener("click", init);
+
+(function(){
+  const divider=document.getElementById("divider");
+  const explorer=document.getElementById("explorer");
+  const main=document.getElementById("main");
+  let dragging=false;
+  divider.addEventListener("mousedown", (e)=>{ dragging=true; e.preventDefault(); document.body.style.cursor="col-resize"; });
+  window.addEventListener("mousemove", (e)=>{
+    if(!dragging) return;
+    const rect=main.getBoundingClientRect();
+    let pct=((e.clientX-rect.left)/rect.width)*100;
+    pct=Math.max(20, Math.min(55, pct));
+    explorer.style.flex="0 0 "+pct+"%";
+  });
+  window.addEventListener("mouseup", ()=>{ dragging=false; document.body.style.cursor=""; });
+})();
+
+// about modal
+(function(){
+  const btn=document.getElementById("aboutBtn");
+  const modal=document.getElementById("aboutModal");
+  const close=document.getElementById("aboutClose");
+  function open(){ modal.classList.add("open"); modal.setAttribute("aria-hidden","false"); }
+  function hide(){ modal.classList.remove("open"); modal.setAttribute("aria-hidden","true"); }
+  if(btn) btn.addEventListener("click", open);
+  if(close) close.addEventListener("click", hide);
+  if(modal) modal.addEventListener("click", (e)=>{ if(e.target===modal) hide(); });
+  window.addEventListener("keydown", (e)=>{ if(e.key==="Escape" && modal.classList.contains("open")) hide(); });
+})();
+
+init().catch(err=>{
+  document.getElementById("viewerInner").innerHTML='<div class="placeholder">Failed to load: '+err.message+'</div>';
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+@frame
+
+#header
+	id:
+    frame_001
+  title:
+    T
+
+#body
+  file:
+    file_001
+  target:
+    T
+  type:
+    class

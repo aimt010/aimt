@@ -1,0 +1,17 @@
+@node
+
+#header
+  id:
+    node_001
+  title:
+    N
+
+#body
+  parent:
+    domain_001
+  type:
+    service
+  description:
+    @relation
+      type:
+        depends_on

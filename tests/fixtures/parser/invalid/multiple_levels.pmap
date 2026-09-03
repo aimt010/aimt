@@ -1,0 +1,17 @@
+@domain
+
+#header
+  id:
+    d1
+#body
+  title:
+    D
+
+@region
+
+#header
+  id:
+    r1
+#body
+  title:
+    R

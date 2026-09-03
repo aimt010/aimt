@@ -1,0 +1,11 @@
+@file
+
+#header
+  id:
+    file_001
+  path:
+    src/main.rs
+
+#body
+  hash:
+    abc123

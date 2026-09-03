@@ -1,0 +1,16 @@
+[package]
+name = "aimt"
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+
+[dependencies]
+ed25519-dalek = { version = "3.0.0", features = ["rand_core"] }
+hex = "0.4"
+getrandom = "0.4.3"
+keyring = "4.2.0"
+rpassword = "7"
+dirs = "6.0.0"
+
+[dev-dependencies]
+tempfile = "3.27.0"

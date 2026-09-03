@@ -1,0 +1,18 @@
+@node
+
+#header
+  id:
+    node_001
+  title:
+    N
+
+#body
+  parent:
+    domain_001
+  description:
+    para one.
+
+
+    para two
+  type:
+    service

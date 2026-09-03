@@ -1,0 +1,97 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install Rust (stable with clippy and rustfmt)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: false
+
+      - name: Format check
+        run: cargo fmt --check
+
+      - name: Check
+        run: cargo check --all-targets
+
+      - name: Clippy
+        run: cargo clippy --all-targets --all-features
+
+      - name: Tests (unit and integration)
+        run: cargo test --all-features
+
+      - name: Build (debug)
+        run: cargo build
+
+      - name: CLI smoke — version and help
+        run: |
+          set -euo pipefail
+          cargo run --quiet -- --version
+          cargo run --quiet -- --help
+          # Help must list core commands
+          out=$(cargo run --quiet -- --help)
+          echo "$out" | grep -q "install"
+          echo "$out" | grep -q "upgrade"
+          echo "$out" | grep -q "uninstall"
+          echo "$out" | grep -q "init"
+
+      - name: CLI smoke — install/upgrade/uninstall help
+        run: |
+          set -euo pipefail
+          cargo run --quiet -- upgrade --help | grep -q "upgrade"
+          cargo run --quiet -- uninstall --help | grep -q "uninstall"
+          cargo run --quiet -- install --help | grep -q "install"
+
+      - name: Build release (verify release build not broken)
+        run: cargo build --release
+
+      - name: Verify install scripts syntax
+        run: |
+          set -euo pipefail
+          bash -n scripts/install.sh
+          echo "install.sh syntax OK"
+          # basic presence checks for required patterns
+          grep -q "AIMT" scripts/install.sh
+          grep -q "checksums.txt" scripts/install.sh
+          # powershell syntax check if pwsh available (not required to fail)
+          if command -v pwsh >/dev/null 2>&1; then
+            pwsh -NoProfile -Command "Parse-Error check" scripts/install.ps1 2>&1 || true
+          fi
+          test -f scripts/install.ps1 && echo "install.ps1 present"
+
+      - name: Validate workflow YAML
+        run: |
+          python3 -c "import yaml, pathlib, sys; yaml.safe_load(pathlib.Path('.github/workflows/ci.yml').read_text()); yaml.safe_load(pathlib.Path('.github/workflows/release.yml').read_text()); print('YAML OK')"
+
+      - name: Verify triggers — ci on main, release on v*
+        run: |
+          set -euo pipefail
+          # ci must trigger on push to main
+          grep -q "branches:" .github/workflows/ci.yml
+          grep -q "main" .github/workflows/ci.yml
+          # release must still trigger on v* tags
+          grep -q "tags:" .github/workflows/release.yml
+          grep -q "'v\*'" .github/workflows/release.yml
+          echo "Triggers verified: ci -> main push, release -> v* tag"

@@ -1,0 +1,18 @@
+@node
+
+#header
+  id:
+    node_002
+  title:
+    Multiline
+
+#body
+  description:
+    This is the first paragraph.
+
+    This is the second paragraph.
+
+  type:
+    service
+  parent:
+    domain_001

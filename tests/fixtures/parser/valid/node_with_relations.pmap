@@ -1,0 +1,37 @@
+@node
+
+#header
+  id:
+    node_001
+  title:
+    Payment Service
+  summary:
+    Handles payment processing
+
+#body
+  parent:
+    domain_001
+  description:
+    The payment service orchestrates checkout.
+
+    It delegates to provider and validator.
+
+  type:
+    service
+  relations:
+    @relation
+      type:
+        depends_on
+      from:
+        node_001
+      to:
+        node_002
+      evidence:
+        src/pay.rs:88
+    @relation
+      type:
+        uses
+      from:
+        node_001
+      to:
+        file_010

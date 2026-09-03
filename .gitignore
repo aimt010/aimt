@@ -1,0 +1,6 @@
+/target
+
+*.key
+*.bak
+*.aimt.tmp
+.DS_Store

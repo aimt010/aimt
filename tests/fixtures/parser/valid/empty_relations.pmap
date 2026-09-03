@@ -1,0 +1,14 @@
+@node
+
+#header
+  id:
+    node_003
+  title:
+    Empty Relations
+
+#body
+  parent:
+    domain_001
+  type:
+    service
+  relations:

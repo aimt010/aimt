@@ -1,0 +1,11 @@
+@aimt
+
+#header
+  id:
+    aimt_root
+  version:
+    0.1.0
+
+#body
+  title:
+    AIMT Root
