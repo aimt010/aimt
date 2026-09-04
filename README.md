@@ -1,5 +1,17 @@
-# AIMT - AI Mapping Taxonomy
-## Building the Knowledge Brain of AI
+<div align="center">
+
+![AIMT](assets/images/logo-aimt.png)
+
+**AIMT - AI Mapping Taxonomy**
+
+**Building the Knowledge Brain of AI**
+
+[![Built with Rust](https://img.shields.io/badge/Built%20with-Rust-orange)](https://www.rust-lang.org/)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-green)](LICENSE)
+
+</div>
+
+---
 
 AIMT is a small knowledge-mapping format and runtime that makes project knowledge understandable to both humans and AI.
 
