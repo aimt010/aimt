@@ -233,8 +233,6 @@ Installers never touch `.aimt` files or credentials and never request private ke
 
 ## Documentation
 
-* Specification: [`.pmap` syntax](docs/specification/pmap.md) · [Levels](docs/specification/levels.md) · [Fields](docs/specification/fields.md)
-* Architecture: [Overview](docs/architecture/overview.md) · [Runtime](docs/architecture/runtime.md) · [Storage](docs/architecture/storage.md) · [Folder structure](docs/architecture/folder_structure.md)
 * Project docs: [Security](SECURITY.md) · [Contributing](CONTRIBUTING.md) · [Code of Conduct](CODE_OF_CONDUCT.md)
 
 Source repository: [https://github.com/aimt010/aimt](https://github.com/aimt010/aimt)
